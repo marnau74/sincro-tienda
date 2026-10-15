@@ -13,8 +13,9 @@
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="WireMock.Net" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Sincro.Infraestructura\Sincro.Infraestructura.csproj" />
+    <ProjectReference Include="..\..\src\Sincro.Api\Sincro.Api.csproj" />
   </ItemGroup>
 </Project>

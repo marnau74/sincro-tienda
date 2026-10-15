@@ -6,6 +6,7 @@
     <Project Path="src/Sincro.Infraestructura/Sincro.Infraestructura.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Sincro.Arquitectura.Tests/Sincro.Arquitectura.Tests.csproj" />
     <Project Path="tests/Sincro.Integracion.Tests/Sincro.Integracion.Tests.csproj" />
     <Project Path="tests/Sincro.Unitarios.Tests/Sincro.Unitarios.Tests.csproj" />
   </Folder>

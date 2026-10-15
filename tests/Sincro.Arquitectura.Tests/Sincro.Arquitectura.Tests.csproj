@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="xunit.v3.mtp-v2" />
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Sincro.Api\Sincro.Api.csproj" />
+  </ItemGroup>
+</Project>
