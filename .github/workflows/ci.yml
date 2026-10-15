@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  calidad:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Sin rutas locales ni correos personales
+        run: |
+          if git grep -nIiE '([a-z]:[\/]+users[\/]|/home/[a-z0-9_-]+/|@(gmail|hotmail|outlook|yahoo)\.)'; then
+            echo "Hay datos personales en el repositorio" && exit 1
+          fi
+      - name: Restaurar
+        run: dotnet restore Sincro.slnx
+      - name: Formato
+        run: dotnet format Sincro.slnx --verify-no-changes --no-restore --exclude src/Sincro.Infraestructura/Persistencia/Migraciones
+      - name: Compilar (avisos como errores)
+        run: dotnet build Sincro.slnx --no-restore -c Release
+      # Cada proyecto de tests se ejecuta por separado: así falla en el proyecto concreto y el
+      # resultado no depende de cómo el SDK enlace con el ejecutor de pruebas.
+      # Los de integración usan Testcontainers (PostgreSQL): los runners de GitHub traen Docker.
+      - name: Tests
+        run: |
+          for proyecto in tests/*.Tests/; do
+            echo "::group::${proyecto}"
+            dotnet run --project "${proyecto}" --no-build -c Release || exit 1
+            echo "::endgroup::"
+          done
+
+  dependencias:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Paquetes con vulnerabilidades conocidas (incluidos los transitivos)
+        run: |
+          dotnet restore Sincro.slnx
+          dotnet list Sincro.slnx package --vulnerable --include-transitive 2>&1 | tee vulnerabilidades.txt
+          if grep -qE '^\s+>' vulnerabilidades.txt; then
+            echo "Hay paquetes vulnerables" && exit 1
+          fi
+      - name: Paquetes en desuso
+        run: dotnet list Sincro.slnx package --deprecated
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: La imagen se construye
+        run: docker build -t sincro-tienda .
+      - name: El compose de la demo es válido
+        run: docker compose config -q
