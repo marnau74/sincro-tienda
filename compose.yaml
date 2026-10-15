@@ -1,0 +1,131 @@
+# Demo completa en local: WooCommerce + Odoo 19 + el sincronizador, cada uno con su base de datos.
+# Primera vez:  ./demo/preparar.sh   (instala WooCommerce y Odoo, crea productos y claves y arranca todo)
+# Las contraseñas son de la demo local; nada de esto está pensado para exponerse a internet.
+name: sincro-tienda
+
+services:
+  sincro-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: sincro
+      POSTGRES_PASSWORD: sincro
+      POSTGRES_DB: sincro
+    ports:
+      - "5433:5432"
+    volumes:
+      - datos-sincro:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sincro"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  sincro:
+    build: .
+    depends_on:
+      sincro-db:
+        condition: service_healthy
+    ports:
+      - "5080:8080"
+    env_file:
+      - path: demo/.env
+        required: false
+    environment:
+      ConnectionStrings__sincro: Host=sincro-db;Database=sincro;Username=sincro;Password=sincro
+      BaseDeDatos__MigrarAlArrancar: "true"
+      WooCommerce__Url: http://wordpress
+      Odoo__Url: http://odoo:8069
+      Odoo__BaseDeDatos: tienda
+      # En la demo se buscan cambios de stock cada minuto para verlo enseguida
+      Sincronizacion__BuscarStockCadaMinutos: "1"
+      Sincronizacion__RevisarPedidosCadaMinutos: "2"
+
+  odoo-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: postgres
+    volumes:
+      - datos-odoo-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  odoo:
+    image: odoo:19.0
+    depends_on:
+      odoo-db:
+        condition: service_healthy
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: odoo-db
+      USER: odoo
+      PASSWORD: odoo
+    command: ["--db-filter=^tienda$$"]
+    volumes:
+      - datos-odoo:/var/lib/odoo
+      - ./demo:/demo:ro
+
+  woo-db:
+    image: mariadb:11
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+      MARIADB_ROOT_PASSWORD: raiz-demo
+    volumes:
+      - datos-woo-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  wordpress:
+    image: wordpress:7-php8.4-apache
+    depends_on:
+      woo-db:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: woo-db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      # La dirección de la tienda es el host con el que se la llama: http://localhost:8080 desde el
+      # navegador y http://wordpress desde el sincronizador (WooCommerce firma OAuth con esa dirección).
+      WORDPRESS_CONFIG_EXTRA: |
+        $$casa = isset($$_SERVER['HTTP_HOST']) ? 'http://' . $$_SERVER['HTTP_HOST'] : 'http://localhost:8080';
+        define('WP_HOME', $$casa);
+        define('WP_SITEURL', $$casa);
+    volumes:
+      - datos-wordpress:/var/www/html
+      - ./demo/wordpress-demo.php:/var/www/html/wp-content/mu-plugins/sincro-demo.php:ro
+
+  # Solo para preparar la tienda (WP-CLI): ./demo/preparar.sh lo usa con «docker compose run»
+  wpcli:
+    image: wordpress:cli-php8.4
+    profiles: [herramientas]
+    user: "33:33"
+    depends_on:
+      - wordpress
+    environment:
+      WORDPRESS_DB_HOST: woo-db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - datos-wordpress:/var/www/html
+      - ./demo/wordpress-demo.php:/var/www/html/wp-content/mu-plugins/sincro-demo.php:ro
+
+volumes:
+  datos-sincro:
+  datos-odoo-db:
+  datos-odoo:
+  datos-woo-db:
+  datos-wordpress:
