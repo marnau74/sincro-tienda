@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+
 using Sincro.Aplicacion;
 using Sincro.Dominio;
 using Sincro.Dominio.Pedidos;
@@ -49,8 +50,10 @@ public sealed class WooCommerceTienda(HttpClient http) : ITienda
 
     public async Task ActualizarStock(long idProducto, int cantidad, CancellationToken ct)
     {
-        using var r = await http.PutAsJsonAsync($"{Api}products/{idProducto}",
-            new { manage_stock = true, stock_quantity = cantidad }, ct);
+        // Cuerpo entero con Content-Length (sin chunked), como en Odoo: no todos los servidores PHP lo leen
+        using var cuerpo = JsonContent.Create(new { manage_stock = true, stock_quantity = cantidad });
+        await cuerpo.LoadIntoBufferAsync(ct);
+        using var r = await http.PutAsync($"{Api}products/{idProducto}", cuerpo, ct);
         await ComprobarRespuesta(r, ct);
     }
 
