@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+
 using Npgsql;
+
 using Sincro.Aplicacion;
 using Sincro.Dominio.Cola;
 

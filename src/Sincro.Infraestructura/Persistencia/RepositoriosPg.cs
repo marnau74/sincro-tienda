@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Sincro.Aplicacion;
 using Sincro.Dominio.Registro;
 
