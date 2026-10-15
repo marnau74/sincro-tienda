@@ -1,8 +1,10 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+
 using Sincro.Aplicacion;
 using Sincro.Aplicacion.Deteccion;
 using Sincro.Dominio.Cola;

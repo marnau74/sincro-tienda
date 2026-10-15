@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Sincro.Api;
 using Sincro.Aplicacion;
 using Sincro.Infraestructura;

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+
 using Sincro.Infraestructura.Persistencia;
+
 using Testcontainers.PostgreSql;
 
 [assembly: AssemblyFixture(typeof(Sincro.Integracion.Tests.BaseDeDatos))]
