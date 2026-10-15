@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Sincro.Api/Sincro.Api.csproj" />
+    <Project Path="src/Sincro.Aplicacion/Sincro.Aplicacion.csproj" />
+    <Project Path="src/Sincro.Dominio/Sincro.Dominio.csproj" />
+    <Project Path="src/Sincro.Infraestructura/Sincro.Infraestructura.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Sincro.Unitarios.Tests/Sincro.Unitarios.Tests.csproj" />
+  </Folder>
+</Solution>
