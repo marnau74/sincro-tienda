@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+
 using Sincro.Dominio;
 
 namespace Sincro.Infraestructura.Odoo;
@@ -12,9 +13,15 @@ namespace Sincro.Infraestructura.Odoo;
 /// </summary>
 public sealed class ClienteJson2(HttpClient http)
 {
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
     public async Task<JsonElement> Llamar(string modelo, string metodo, object argumentos, CancellationToken ct)
     {
-        using var r = await http.PostAsJsonAsync($"json/2/{modelo}/{metodo}", argumentos, ct);
+        // El cuerpo va entero y con Content-Length: Odoo ignora los cuerpos enviados por trozos (chunked), y
+        // entonces una búsqueda llega sin filtro y devuelve registros que no son.
+        using var cuerpo = new ByteArrayContent(JsonSerializer.SerializeToUtf8Bytes(argumentos, Json));
+        cuerpo.Headers.ContentType = new("application/json") { CharSet = "utf-8" };
+        using var r = await http.PostAsync($"json/2/{modelo}/{metodo}", cuerpo, ct);
         if (r.IsSuccessStatusCode)
         {
             return await r.Content.ReadFromJsonAsync<JsonElement>(ct);

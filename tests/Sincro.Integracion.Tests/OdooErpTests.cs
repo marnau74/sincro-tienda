@@ -1,9 +1,13 @@
 using System.Text.Json;
+
 using Microsoft.Extensions.Options;
+
 using Shouldly;
+
 using Sincro.Dominio;
 using Sincro.Dominio.Pedidos;
 using Sincro.Infraestructura.Odoo;
+
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -52,6 +56,9 @@ public sealed class OdooErpTests : IDisposable
         var peticion = _odoo.LogEntries.Single().RequestMessage!;
         peticion.Headers!["Authorization"].Single().ShouldBe("bearer clave-de-prueba");
         peticion.Headers["X-Odoo-Database"].Single().ShouldBe("tienda");
+        // Odoo ignora los cuerpos por trozos: tiene que ir con su longitud
+        peticion.Headers.ShouldContainKey("Content-Length");
+        peticion.Headers.ContainsKey("Transfer-Encoding").ShouldBeFalse();
         Cuerpo("sale.order/search_read").GetProperty("domain").GetRawText().ShouldBe("""[["client_order_ref","=","WC-1042"]]""");
     }
 

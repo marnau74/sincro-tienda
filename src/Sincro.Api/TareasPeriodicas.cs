@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+
 using Sincro.Aplicacion.Cola;
 using Sincro.Aplicacion.Deteccion;
 
@@ -26,7 +27,9 @@ public static class TareasPeriodicas
         {
             return servicios;
         }
-        servicios.AddHostedService(sp => new TareaPeriodica("cola", TimeSpan.FromSeconds(o.ProcesarColaCadaSegundos), sp,
+        // AddSingleton y no AddHostedService: este descarta los registros repetidos del mismo tipo,
+        // y las tres tareas son TareaPeriodica (solo se ejecutaría la primera)
+        servicios.AddSingleton<IHostedService>(sp => new TareaPeriodica("cola", TimeSpan.FromSeconds(o.ProcesarColaCadaSegundos), sp,
             async (s, ct) =>
             {
                 // Mientras salgan lotes llenos se sigue sin esperar: así se vacía rápido una cola atrasada
@@ -39,9 +42,9 @@ public static class TareasPeriodicas
                 } while (tomados == o.MensajesPorLote && !ct.IsCancellationRequested);
                 return total;
             }));
-        servicios.AddHostedService(sp => new TareaPeriodica("stock", TimeSpan.FromMinutes(o.BuscarStockCadaMinutos), sp,
+        servicios.AddSingleton<IHostedService>(sp => new TareaPeriodica("stock", TimeSpan.FromMinutes(o.BuscarStockCadaMinutos), sp,
             (s, ct) => s.GetRequiredService<DetectarCambios>().Stock(ct)));
-        servicios.AddHostedService(sp => new TareaPeriodica("pedidos", TimeSpan.FromMinutes(o.RevisarPedidosCadaMinutos), sp,
+        servicios.AddSingleton<IHostedService>(sp => new TareaPeriodica("pedidos", TimeSpan.FromMinutes(o.RevisarPedidosCadaMinutos), sp,
             (s, ct) => s.GetRequiredService<DetectarCambios>().Pedidos(ct)));
         return servicios;
     }
